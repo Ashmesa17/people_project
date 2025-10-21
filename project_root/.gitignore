@@ -1,0 +1,7 @@
+venv/
+requirements.txt
+.serverless/
+__init__.py
+
+node_modules/
+package-lock.json

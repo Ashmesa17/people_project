@@ -1,0 +1,3 @@
+CC,12345,Ashlley,Jaramillo,ashlley@example.com
+TI,67890,Juan,Pérez,juan.perez@example.com
+CC,54321,Ana,Gómez,ana.gomez@example.com

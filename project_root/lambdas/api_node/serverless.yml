@@ -1,0 +1,51 @@
+service: api-node-personas
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: us-east-1
+  environment:
+    PEOPLE_TABLE: PeopleTable
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:GetItem
+        - dynamodb:Scan
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - arn:aws:dynamodb:${self:provider.region}:*:table/PeopleTable
+
+
+functions:
+  getPersona:
+    handler: api_node/handler.getPerson
+    events:
+      - http:
+          path: personas/{documento}
+          method: get
+          cors: true
+
+  listPersonas:
+    handler: api_node/handler.getAllPeople
+    events:
+      - http:
+          path: personas
+          method: get
+          cors: true
+
+  updatePersona:
+    handler: api_node/handler.updatePerson
+    events:
+      - http:
+          path: personas/{documento}
+          method: put
+          cors: true
+
+  deletePersona:
+    handler: api_node/handler.deletePerson
+    events:
+      - http:
+          path: personas/{documento}
+          method: delete
+          cors: true

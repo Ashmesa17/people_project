@@ -1,0 +1,48 @@
+service: people-project
+
+provider:
+  name: aws
+  runtime: python3.11
+  region: us-east-1
+  environment:
+    BUCKET_NAME: people-uploads-ashlley-${opt:stage, 'dev'}-${sls:instanceId}
+    PEOPLE_TABLE: PeopleTable
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:GetObject
+      Resource:
+        - arn:aws:s3:::${self:provider.environment.BUCKET_NAME}/*
+    - Effect: Allow
+      Action:
+        - dynamodb:PutItem
+        - dynamodb:GetItem
+        - dynamodb:Scan
+      Resource:
+        - arn:aws:dynamodb:${self:provider.region}:*:table/PeopleTable
+
+package:
+  include:
+    - src/**
+
+functions:
+  s3_upload_handler:
+    handler: handler.s3_upload_handler
+    events:
+      - s3:
+          bucket: ${self:provider.environment.BUCKET_NAME}
+          event: s3:ObjectCreated:*
+
+resources:
+  Resources:
+    PeopleTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: PeopleTable
+        AttributeDefinitions:
+          - AttributeName: documento
+            AttributeType: S
+        KeySchema:
+          - AttributeName: documento
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
