@@ -1,11 +1,10 @@
-import os
 import pytest
 from unittest.mock import patch, MagicMock
-from your_module_name.s3_repository import S3Repository  # ajusta el import
+from src.infrastructure.s3_repository import S3Repository 
 
 @pytest.fixture
 def mock_boto_client():
-    with patch("your_module_name.s3_repository.boto3.client") as mock_client:
+    with patch("src.infrastructure.s3_repository.boto3.client") as mock_client:
         mock_s3 = MagicMock()
         mock_client.return_value = mock_s3
         yield mock_s3

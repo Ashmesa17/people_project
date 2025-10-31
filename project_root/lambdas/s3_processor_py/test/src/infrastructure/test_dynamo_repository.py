@@ -1,11 +1,10 @@
-import os
 import pytest
 from unittest.mock import patch, MagicMock
-from your_module_name.dynamo_repository import DynamoRepository  # ajusta el import
+from src.infrastructure.dynamo_repository import DynamoRepository
 
 @pytest.fixture
 def mock_boto_resource():
-    with patch("your_module_name.dynamo_repository.boto3.resource") as mock_resource:
+    with patch("src.infrastructure.dynamo_repository.boto3.resource") as mock_resource:
         mock_table = MagicMock()
         mock_resource.return_value.Table.return_value = mock_table
         yield mock_table
