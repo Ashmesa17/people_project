@@ -24,6 +24,8 @@ class DynamoRepository {
 
     } catch (error) {
       console.error('Error en getPerson:', error);
+      // Si el error ya tiene statusCode, relanzarlo (preservar mensajes esperados)
+      if (error && error.statusCode) throw error;
       this._handleDynamoError(error, 'obtener persona');
     }
   }
@@ -35,6 +37,7 @@ class DynamoRepository {
       return result.Items || [];
     } catch (error) {
       console.error('Error en getAllPeople:', error);
+      if (error && error.statusCode) throw error;
       this._handleDynamoError(error, 'listar personas');
     }
   }
@@ -82,6 +85,7 @@ class DynamoRepository {
 
     } catch (error) {
       console.error('Error en updatePerson:', error);
+      if (error && error.statusCode) throw error;
       this._handleDynamoError(error, 'actualizar persona');
     }
   }
@@ -99,24 +103,25 @@ class DynamoRepository {
 
     } catch (error) {
       console.error('Error en deletePerson:', error);
+      if (error && error.statusCode) throw error;
       this._handleDynamoError(error, 'eliminar persona');
     }
   }
 
   _handleDynamoError(error, operacion) {
-    if (error.code === 'ConditionalCheckFailedException') {
+    if (error && error.code === 'ConditionalCheckFailedException') {
       const err = new Error(`No se pudo ${operacion}: registro no encontrado.`);
       err.statusCode = 404;
       throw err;
     }
 
-    if (error.code === 'ValidationException') {
+    if (error && error.code === 'ValidationException') {
       const err = new Error(`Error de validación al ${operacion}.`);
       err.statusCode = 400;
       throw err;
     }
 
-    if (error.code === 'ResourceNotFoundException') {
+    if (error && error.code === 'ResourceNotFoundException') {
       const err = new Error(`Tabla DynamoDB no encontrada.`);
       err.statusCode = 500;
       throw err;
@@ -124,7 +129,7 @@ class DynamoRepository {
 
     const err = new Error(`Error interno al ${operacion}.`);
     err.statusCode = 500;
-    err.original = error.message;
+    err.original = error && error.message;
     throw err;
   }
 }
