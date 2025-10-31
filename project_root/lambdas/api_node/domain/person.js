@@ -27,4 +27,9 @@ class Persona {
     };
   }
 }
+function _displayName(data) {
+  if (!data) return '';
+  return `${data.nombre || ''} ${data.apellido || ''}`.trim();
+}
+
 module.exports = { Persona };

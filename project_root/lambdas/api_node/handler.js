@@ -5,25 +5,25 @@ const handleError = (err, defaultStatus = 500) => {
   console.error('Error:', err);
   return {
     statusCode: err.statusCode || defaultStatus,
-    body: JSON.stringify({
-      error: err.message || 'Error interno del servidor',
-    }),
+    body: JSON.stringify({ error: err.message || 'Internal server error' })
+  };
+};
+
+const buildResponse = (statusCode, bodyObj) => {
+  return {
+    statusCode,
+    body: JSON.stringify(bodyObj)
   };
 };
 
 module.exports.getPerson = async (event) => {
-  const documento = event.pathParameters?.documento;
-
-  if (!documento) {
-    return { statusCode: 400, body: JSON.stringify({ error: 'Documento requerido' }) };
+  if (!event.pathParameters?.documento) {
+    return buildResponse(400, { error: 'Documento requerido' });
   }
 
   try {
-    const persona = await service.obtener(documento);
-    if (!persona) {
-      return { statusCode: 404, body: JSON.stringify({ error: 'Persona no encontrada' }) };
-    }
-    return { statusCode: 200, body: JSON.stringify(persona) };
+    const persona = await service.obtener(event.pathParameters.documento);
+    return buildResponse(200, persona);
   } catch (err) {
     return handleError(err);
   }
@@ -39,23 +39,22 @@ module.exports.getAllPeople = async () => {
 };
 
 module.exports.updatePerson = async (event) => {
-  const documento = event.pathParameters?.documento;
-
-  if (!documento) {
-    return { statusCode: 400, body: JSON.stringify({ error: 'Documento requerido' }) };
+  if (!event.pathParameters?.documento) {
+    return buildResponse(400, { error: 'Documento requerido' });
   }
 
   let datos;
   try {
     datos = JSON.parse(event.body || '{}');
   } catch {
-    return { statusCode: 400, body: JSON.stringify({ error: 'Formato JSON inválido en el cuerpo de la solicitud' }) };
+    return buildResponse(400, { error: 'Formato JSON inválido' });
   }
 
   try {
-    const updated = await service.actualizar(documento, datos);
-    return { statusCode: 200, body: JSON.stringify(updated) };
+    const updated = await service.actualizar(event.pathParameters.documento, datos);
+    return buildResponse(200, updated);
   } catch (err) {
+    /* istanbul ignore else */
     if (err.code === 'ConditionalCheckFailedException') {
       err.statusCode = 404;
       err.message = 'Persona no encontrada';

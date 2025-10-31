@@ -9,11 +9,3 @@ class DynamoRepository:
 
     def put_person(self, persona: dict):
         self.table.put_item(Item=persona)
-
-    def get_person(self, documento: str):
-        response = self.table.get_item(Key={'documento': documento})
-        return response.get('Item')
-
-    def scan_people(self):
-        response = self.table.scan()
-        return response.get('Items', [])

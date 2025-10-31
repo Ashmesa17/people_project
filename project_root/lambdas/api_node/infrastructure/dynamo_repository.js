@@ -24,7 +24,6 @@ class DynamoRepository {
 
     } catch (error) {
       console.error('Error en getPerson:', error);
-      // Si el error ya tiene statusCode, relanzarlo (preservar mensajes esperados)
       if (error && error.statusCode) throw error;
       this._handleDynamoError(error, 'obtener persona');
     }
@@ -43,16 +42,16 @@ class DynamoRepository {
   }
 
   async updatePerson(documento, datos) {
+    if (!datos || Object.keys(datos).length === 0) {
+      const err = new Error('No hay datos válidos para actualizar');
+      err.statusCode = 400;
+      throw err;
+    }
+
     try {
       const updateExpr = [];
       const exprAttrValues = {};
       const exprAttrNames = {};
-
-      if (!datos || Object.keys(datos).length === 0) {
-        const err = new Error('No hay datos válidos para actualizar');
-        err.statusCode = 400;
-        throw err;
-      }
 
       Object.keys(datos).forEach((k) => {
         if (datos[k] !== undefined && datos[k] !== null) {
@@ -78,15 +77,24 @@ class DynamoRepository {
         ConditionExpression: 'attribute_exists(documento)' 
       };
 
-      console.log('Update params:', JSON.stringify(params, null, 2));
+      console.log('Update params:', JSON.parse(JSON.stringify(params)));
 
       const result = await dynamo.update(params).promise();
       return result.Attributes;
-
     } catch (error) {
-      console.error('Error en updatePerson:', error);
-      if (error && error.statusCode) throw error;
-      this._handleDynamoError(error, 'actualizar persona');
+      if (error?.code === 'ConditionalCheckFailedException') {
+        const err = new Error('No se pudo actualizar: registro no encontrado');
+        err.statusCode = 404;
+        throw err;
+      }
+      if (error?.code === 'ValidationException') {
+        const err = new Error('Error de validación en los datos');
+        err.statusCode = 400;
+        throw err;
+      }
+      const err = new Error(`Error interno al actualizar: ${error.message}`);
+      err.statusCode = 500;
+      throw err;
     }
   }
 
@@ -109,27 +117,20 @@ class DynamoRepository {
   }
 
   _handleDynamoError(error, operacion) {
-    if (error && error.code === 'ConditionalCheckFailedException') {
-      const err = new Error(`No se pudo ${operacion}: registro no encontrado.`);
+    if (error?.code === 'ConditionalCheckFailedException') {
+      const err = new Error(`No se pudo ${operacion}: registro no encontrado`);
       err.statusCode = 404;
       throw err;
     }
 
-    if (error && error.code === 'ValidationException') {
-      const err = new Error(`Error de validación al ${operacion}.`);
+    if (error?.code === 'ValidationException') {
+      const err = new Error(`Error de validación al ${operacion}`);
       err.statusCode = 400;
       throw err;
     }
 
-    if (error && error.code === 'ResourceNotFoundException') {
-      const err = new Error(`Tabla DynamoDB no encontrada.`);
-      err.statusCode = 500;
-      throw err;
-    }
-
-    const err = new Error(`Error interno al ${operacion}.`);
+    const err = new Error(`Error interno al ${operacion}`);
     err.statusCode = 500;
-    err.original = error && error.message;
     throw err;
   }
 }

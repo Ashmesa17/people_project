@@ -95,3 +95,53 @@ describe('DynamoRepository', () => {
     expect(mockScan).toHaveBeenCalledWith({ TableName: 'test-table' });
   });
 });
+
+describe('DynamoRepository - Error Handling', () => {
+  let repo;
+
+  beforeEach(() => {
+    process.env.PEOPLE_TABLE = 'test-table';
+    repo = new DynamoRepository();
+  });
+
+  test('maneja errores de AWS SDK', async () => {
+    const error = new Error('AWS Error');
+    mockUpdate.mockRejectedValue(error);
+    await expect(repo.updatePerson('123', { nombre: 'test' }))
+      .rejects
+      .toMatchObject({
+        message: expect.stringContaining('Error interno'),
+        statusCode: 500
+      });
+  });
+
+  test('maneja ValidationException', async () => {
+    mockUpdate.mockRejectedValue({ 
+      code: 'ValidationException',
+      message: 'Invalid data'
+    });
+    await expect(repo.updatePerson('123', { nombre: 'test' }))
+      .rejects
+      .toMatchObject({
+        message: expect.stringContaining('Error de validación'),
+        statusCode: 400
+      });
+  });
+
+  test('getAllPeople maneja error de scan', async () => {
+    mockScan.mockRejectedValue(new Error('Scan failed'));
+    await expect(repo.getAllPeople())
+      .rejects
+      .toMatchObject({ statusCode: 500 });
+  });
+
+  test('maneja ConditionalCheckFailedException en delete', async () => {
+    mockDelete.mockRejectedValue({ code: 'ConditionalCheckFailedException' });
+    await expect(repo.deletePerson('123'))
+      .rejects
+      .toMatchObject({ 
+        statusCode: 404,
+        message: expect.stringContaining('no encontrado')
+      });
+  });
+});

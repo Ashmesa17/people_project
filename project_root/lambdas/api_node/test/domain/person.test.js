@@ -36,4 +36,35 @@ describe('Persona', () => {
       correo: null
     });
   });
+
+  test('actualizar ignora campos no permitidos', () => {
+    const persona = new Persona({
+      tipo_documento: 'DNI',
+      documento: '123',
+      nombre: 'Juan',
+      apellido: 'Perez'
+    });
+
+    persona.actualizar({
+      nombre: 'Pedro',
+      invalid: 'field',
+      edad: 30
+    });
+
+    expect(persona.nombre).toBe('Pedro');
+    expect(persona).not.toHaveProperty('invalid');
+    expect(persona).not.toHaveProperty('edad');
+  });
+
+  test('toItem devuelve null para campos opcionales no definidos', () => {
+    const persona = new Persona({
+      tipo_documento: 'DNI',
+      documento: '123',
+      nombre: 'Juan',
+      apellido: 'Perez'
+    });
+
+    const item = persona.toItem();
+    expect(item.correo).toBeNull();
+  });
 });

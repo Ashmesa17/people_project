@@ -105,4 +105,17 @@ class PersonaService {
   }
 }
 
+function _mapConditionalErrorTo404(err) {
+  console.error('Mapping conditional error:', err);
+  if (err && err.code === 'ConditionalCheckFailedException') {
+    err.statusCode = 404;
+  }
+  return err;
+}
+function _handleServiceError(contextMsg, error) {
+  console.error(`Error en ${contextMsg}:`, error);
+  if (!error.statusCode) error.statusCode = 500;
+  throw error;
+}
+
 module.exports = { PersonaService };
